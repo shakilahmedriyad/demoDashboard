@@ -27,8 +27,23 @@ export default function SignInForm() {
     },
   });
 
-  const handleSignIn = (values: SignInType) => {
-    console.log("SignIn");
+  const handleSignIn = async (values: SignInType) => {
+    if (!isLoaded) {
+      return;
+    }
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: values.email,
+        password: values.password,
+      });
+
+      if (signInAttempt.status === "complete") {
+        await setActive({ session: signInAttempt.createdSessionId });
+        window.location.href = "/dashboard";
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (

@@ -9,7 +9,7 @@ export default function GoogleAuth() {
 
   if (!signUp) return null;
 
-  const signInWith = (strategy: OAuthStrategy) => {
+  const signInWith = async (strategy: OAuthStrategy) => {
     return signUp.authenticateWithRedirect({
       strategy,
       redirectUrl: "/sign-up/sso-callback",

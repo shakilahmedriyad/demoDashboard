@@ -15,6 +15,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import GoogleAuth from "./GoogleAuth";
+import { useState } from "react";
+import VerificationCode from "./VerificationCode";
 
 const emailExtensions = [
   "gmail.com",
@@ -41,6 +43,7 @@ type SignUpType = z.infer<typeof formSchema>;
 
 export default function SignUpForm() {
   const { signUp, isLoaded, setActive } = useSignUp();
+  const [isVerificationCode, setVerificationCode] = useState(false);
   const form = useForm<SignUpType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,8 +55,6 @@ export default function SignUpForm() {
   });
 
   const handleSignUp = async (values: SignUpType) => {
-    console.log(values);
-    return;
     if (!isLoaded) return;
     try {
       await signUp.create({
@@ -63,12 +64,22 @@ export default function SignUpForm() {
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code",
       });
+
+      setVerificationCode(true);
     } catch (err) {
       alert(err);
     }
   };
 
-  const handleVerification = async () => {
+  const resend = async () => {
+    if (!isLoaded) return;
+
+    await signUp.prepareEmailAddressVerification({
+      strategy: "email_code",
+    });
+  };
+
+  const handleVerification = async (code: string) => {
     const signature = await signUp?.attemptEmailAddressVerification({ code });
     if (signature?.status == "complete" && setActive) {
       await setActive({ session: signature.createdSessionId });
@@ -85,107 +96,112 @@ export default function SignUpForm() {
             Sign in
           </Link>
         </p>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSignUp)}
-            className="space-y-7"
-          >
-            <div className="flex gap-x-7">
-              <FormField
-                control={form.control}
-                name="first_name"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>First Name</FormLabel>
-                    <Input
-                      className="duration-300"
-                      {...field}
-                      placeholder="first_name"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="last_name"
-                render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
+        {!isVerificationCode && (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSignUp)}
+              className="space-y-7"
+            >
+              <div className="flex gap-x-7">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>First Name</FormLabel>
                       <Input
                         className="duration-300"
                         {...field}
-                        placeholder="last_name"
+                        placeholder="first_name"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    className="duration-300"
-                    {...field}
-                    placeholder="example@gmail.com"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {emailExtensions.includes(form.watch("email").split("@")[1]) && (
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          className="duration-300"
+                          {...field}
+                          placeholder="last_name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="linked_in_url"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Linked In</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <Input
                       className="duration-300"
                       {...field}
-                      placeholder="Linked in"
+                      placeholder="example@gmail.com"
                     />
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>password</FormLabel>
-                  <Input
-                    className="duration-300"
-                    type="password"
-                    {...field}
-                    placeholder="password"
-                  />
-                  <FormMessage />
-                </FormItem>
+              {emailExtensions.includes(form.watch("email").split("@")[1]) && (
+                <FormField
+                  control={form.control}
+                  name="linked_in_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Linked In</FormLabel>
+                      <Input
+                        className="duration-300"
+                        {...field}
+                        placeholder="Linked in"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
-            <Button className="w-full" type="submit">
-              Create Account
-            </Button>
-          </form>
-          <div className="flex gap-x-3 text-sm mt-8 items-center">
-            <hr className="w-full border-gray-400" />
-            <p className="min-w-fit inline-block">Or register with</p>
-            <hr className="w-full border-gray-400" />
-          </div>
-          <div className="flex mt-5 w-full">
-            <GoogleAuth />
-          </div>
-        </Form>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>password</FormLabel>
+                    <Input
+                      className="duration-300"
+                      type="password"
+                      {...field}
+                      placeholder="password"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button className="w-full" type="submit">
+                Create Account
+              </Button>
+            </form>
+            <div className="flex gap-x-3 text-sm mt-8 items-center">
+              <hr className="w-full border-gray-400" />
+              <p className="min-w-fit inline-block">Or register with</p>
+              <hr className="w-full border-gray-400" />
+            </div>
+            <div className="flex mt-5 w-full">
+              <GoogleAuth />
+            </div>
+          </Form>
+        )}
+        {isVerificationCode && (
+          <VerificationCode resend={resend} submitCode={handleVerification} />
+        )}
       </div>
     </div>
   );

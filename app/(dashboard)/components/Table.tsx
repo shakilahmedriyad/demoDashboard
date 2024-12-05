@@ -25,18 +25,22 @@ export default function Table() {
   });
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && user) {
       setDatas(user?.publicMetadata.entry as Array<DataType>);
     }
   }, [user, isLoaded]);
   //@ts-nocheck
   const handleSubmission = async (data: any) => {
+    if (!isLoaded || !user) {
+      return;
+    }
     //@ts-expect-error
     if (Math.max(Datas?.length, user?.publicMetadata.entry?.length) > 5) {
       return;
     }
     setDatas((datas) => [data, ...datas]);
     await axios.post("/api/addEntry", { data, userId: user?.id });
+
     form.reset();
   };
   return (
@@ -111,7 +115,7 @@ export default function Table() {
           <Button
             disabled={
               //@ts-expect-error
-              Math.max(Datas.length, user?.publicMetadata.entry?.length) > 5
+              Math.max(Datas?.length, user?.publicMetadata.entry?.length) > 5
             }
             className="mt-8"
             type="submit"

@@ -14,6 +14,8 @@ import axios from "axios";
 export default function Table() {
   const { user, isLoaded } = useUser();
   const [Datas, setDatas] = useState<DataType[]>([]);
+  const [currentEntry, setCurrentEntry] = useState(0);
+
   const form = useForm({
     defaultValues: {
       product_name: "",
@@ -34,22 +36,28 @@ export default function Table() {
     if (!isLoaded || !user) {
       return;
     }
-    //@ts-expect-error
-    if (Math.max(Datas?.length, user?.publicMetadata.entry?.length) > 5) {
-      return;
+    try {
+      //@ts-expect-error
+      if (user.publicMetadata.credit_left - currentEntry < 1) {
+        return;
+      }
+      setDatas((datas) => [data, ...datas]);
+      setCurrentEntry((val) => val + 1);
+      form.reset();
+      await axios.post("/api/addEntry", { data, userId: user?.id });
+    } catch (error) {
+      console.log(error);
     }
-    setDatas((datas) => [data, ...datas]);
-    await axios.post("/api/addEntry", { data, userId: user?.id });
-
-    form.reset();
   };
   return (
     <div>
       <h1 className="text-4xl font-semibold">Data Table</h1>
       <p className=" mb-10 mt-2.5 ">
         you have{"  "}
-        {Number(user?.publicMetadata.credit_left)} entry left upgrade your
-        membership to entry more
+        {Number(user?.publicMetadata.credit_left)
+          ? Number(user?.publicMetadata.credit_left) - currentEntry
+          : 0}{" "}
+        entry left upgrade your membership to entry more
       </p>
 
       <DataTable columns={DataColumns} data={Datas} />
@@ -115,12 +123,17 @@ export default function Table() {
           <Button
             disabled={
               //@ts-expect-error
-              Math.max(Datas?.length, user?.publicMetadata.entry?.length) > 5
+              user?.publicMetadata?.credit_left - currentEntry < 1
             }
             className="mt-8"
             type="submit"
           >
-            Add Data
+            {
+              //@ts-expect-error
+              user?.publicMetadata?.credit_left - currentEntry < 1
+                ? "upgrade membership to add more"
+                : "Add data"
+            }
           </Button>
         </form>
       </Form>

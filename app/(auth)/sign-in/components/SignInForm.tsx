@@ -76,11 +76,12 @@ export default function SignInForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Password</FormLabel>
                 <Input
                   className="duration-300"
                   {...field}
-                  placeholder="example@gmail.com"
+                  type="password"
+                  placeholder="password"
                 />
               </FormItem>
             )}
